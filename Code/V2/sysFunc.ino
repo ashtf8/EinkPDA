@@ -349,28 +349,28 @@ void setCpuSpeed(int newFreq) {
 }
 
 void updateBattState() {
+  //mapping settings 
+  static float batteryMaxVoltage = 4.4;  // min and max voltages (mapping function will still work if out of these bounds; ratios will just be off)
+  static float batteryMinVoltage = 3.6;
+  static int spriteMax = 6; // bitmap full charge
+  static int spriteMin = 2; // bitmap min charge 
   float batteryVoltage = (analogRead(BAT_SENS) * (3.3 / 4095.0) * 2) + 0.2;
+  float batteryDifference = batteryVoltage - batteryMinVoltage;
+  
 
   static float prevVoltage = 0.0;
   float threshold = 0.05; // Hysteresis threshold (adjustable)
 
-  if (digitalRead(CHRG_SENS) == 1) {
+  if (digitalRead(CHRG_SENS) == 1) { // Forces batt state 7 if charging 
     battState = 7;
   } 
-  else if (batteryVoltage > 4.1 || (prevBattState == 6 && batteryVoltage > (4.1 - threshold))) {
-    battState = 6;
-  } 
-  else if (batteryVoltage > 3.9 || (prevBattState == 5 && batteryVoltage > (3.9 - threshold))) {
-    battState = 5;
-  } 
-  else if (batteryVoltage > 3.8 || (prevBattState == 4 && batteryVoltage > (3.8 - threshold))) {
-    battState = 4;
-  } 
-  else if (batteryVoltage > 3.7 || (prevBattState == 3 && batteryVoltage > (3.7 - threshold))) {
-    battState = 3;
-  } 
-  else if (batteryVoltage <= 3.6) {
-    battState = 2;
+  else if (abs(prevVoltage-batteryVoltage)>threshold){ // Checks if Voltage has changed enough to avoid exessive polling
+    battState =
+    constrain(round( // Rounds the mapping function and sets limits for proper array indexing 
+      ((batteryDifference / (batteryMaxVoltage-batteryMinVoltage)) * (spriteMax+spriteMin/spriteMin)) + spriteMin // Maps voltage to index 
+    ),spriteMin,spriteMax); // Hail Mary for if voltage is ever in unexpected state 
+    
+    prevVoltage = batteryVoltage; // Updates new voltage reference 
   }
 
   if (battState != prevBattState) {
@@ -378,7 +378,6 @@ void updateBattState() {
     newState = true;
   }
 
-  prevVoltage = batteryVoltage;
 }
 
 void TCA8418_irq() {
