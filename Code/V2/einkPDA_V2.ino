@@ -160,6 +160,12 @@ volatile bool newLineAdded = true;
 volatile bool doFull = false;
 std::vector<String> allLines;
 
+// <CALENDAR.ino> Variables
+int displayedYear;
+int displayedMonth;
+int selectedDay;
+CalendarState CurrentCalendarState; // Defined in CALENDAR.ino
+
 //        .o.       ooooooooo.   ooooooooo.    .oooooo..o  //
 //       .888.      `888   `Y88. `888   `Y88. d8P'    `Y8  //
 //      .8"888.      888   .d88'  888   .d88' Y88bo.       //
@@ -169,9 +175,9 @@ std::vector<String> allLines;
 //  o88o     o8888o o888o        o888o        8""88888P'   //
 
 // ADD APPLICATION, NAME, AND ICON TO LISTS
-enum AppState { HOME,TXT,FILEWIZ,USB,BT,SETTINGS,DEBUG };
-const String appStateNames[] =    { "txt"      , "filewiz"  , "usb"      , "bt"       , "settings"  , "tasks"};
-const unsigned char *appIcons[] = { _homeIcons2, _homeIcons3, _homeIcons4, _homeIcons5, _homeIcons6 , taskIconTasks0};
+enum AppState { HOME,TXT,FILEWIZ,USB,BT,SETTINGS,CALENDAR,DEBUG }; // Added CALENDAR
+const String appStateNames[] =    { "txt"      , "filewiz"  , "usb"      , "bt"       , "settings"  , "tasks"   , "calendar"}; // Added "calendar"
+const unsigned char *appIcons[] = { _homeIcons2, _homeIcons3, _homeIcons4, _homeIcons5, _homeIcons6 , taskIconTasks0, calendarIcon }; // Use actual calendarIcon
 
 // SET BOOT APP (HOME)
 AppState CurrentAppState = HOME;
@@ -196,6 +202,9 @@ void applicationEinkHandler() {
       break;
     case FILEWIZ:
       einkHandler_FILEWIZ();
+      break;
+    case CALENDAR: // Added CALENDAR case
+      einkHandler_CALENDAR();
       break;
     case DEBUG:
       break;
@@ -224,6 +233,9 @@ void processKB() {
       break;
     case FILEWIZ:
       processKB_FILEWIZ();
+      break;
+    case CALENDAR: // Added CALENDAR case
+      processKB_CALENDAR();
       break;
     case DEBUG:
       break;
@@ -271,6 +283,7 @@ void processKB() {
 
 // <TASKS.ino>
   std::vector<std::vector<String>> tasks;
+  void ensureTasksFileExists(); // Prototype for function in TASKS.ino
 
 // <OLEDFunc.ino>
   void oledWord(String word);
@@ -346,6 +359,8 @@ void setup() {
     Serial.println("SPIFFS Mount Failed");
     oledWord("SPIFFS Failed");
     delay(1000);
+  } else {
+    ensureTasksFileExists(); // Ensure tasks file exists after SPIFFS mount
   }
 
   // RTC SETUP
@@ -359,6 +374,13 @@ void setup() {
   // SET CLOCK IF NEEDED
   if (SET_CLOCK_ON_UPLOAD || rtc.lostPower()) rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   rtc.start();
+
+  // Initialize Calendar Variables after RTC is ready
+  DateTime now = rtc.now();
+  displayedYear = now.year();
+  displayedMonth = now.month();
+  selectedDay = now.day(); // Start with current day selected
+  CurrentCalendarState = CAL_MONTH_VIEW; // Ensure initial state
 }
 
 void loop() {
