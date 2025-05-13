@@ -8,112 +8,51 @@
 
 void commandSelect(String command) {
   command.toLowerCase();
-
-  // OPEN IN FILE WIZARD
-  if (command.startsWith("-")) {
-    command = removeChar(command, ' ');
-    command = removeChar(command, '-');
-    keypad.disableInterrupts();
-    listDir(SPIFFS, "/");
-    keypad.enableInterrupts();
-
-    for (uint8_t i = 0; i < (sizeof(filesList) / sizeof(filesList[0])); i++) {
-      String lowerFileName = filesList[i]; 
-      lowerFileName.toLowerCase();
-      if (command == lowerFileName || (command+".txt") == lowerFileName || ("/"+command+".txt") == lowerFileName) {
-        workingFile = filesList[i];
+  
+  switch (command[0])
+  {
+    case '-': // OPEN IN FILE WIZARD
+      workingFile = openFile("-");
+      if (workingFile != null) {
         CurrentAppState = FILEWIZ;
         CurrentFileWizState = WIZ1_;
-        CurrentKBState  = FUNC;
+        CurrentKBState = FUNC;
         newState = true;
         return;
       }
-    }
-  }
-
-  // OPEN IN TXT EDITOR
-  if (command.startsWith("/")) {
-    command = removeChar(command, ' ');
-    command = removeChar(command, '/');
-    keypad.disableInterrupts();
-    listDir(SPIFFS, "/");
-    keypad.enableInterrupts();
-
-    for (uint8_t i = 0; i < (sizeof(filesList) / sizeof(filesList[0])); i++) {
-      String lowerFileName = filesList[i]; 
-      lowerFileName.toLowerCase();
-      if (command == lowerFileName || (command+".txt") == lowerFileName || ("/"+command+".txt") == lowerFileName) {
-        editingFile = filesList[i];
+      break;
+    case '/': // OPEN IN TXT EDITOR
+      editingFile = openFile('/');
+      if (editingFile != null) {
         loadFile();
-        CurrentAppState = TXT;
         CurrentTXTState = TXT_;
-        CurrentKBState  = NORMAL;
-        newLineAdded = true;
+        openTxt();
         return;
       }
-    }
+      break;
+    default: break;
   }
-
-  else if (command == "home") {
-    oledWord("You're home, silly!");
-    delay(1000);
-  } 
-  /////////////////////////////
   else if (command == "note" || command == "text" || command == "write" || command == "notebook" || command == "notepad" || command == "txt" || command == "1") {
-    CurrentAppState = TXT;
-    CurrentKBState  = NORMAL;
-    newLineAdded = true;
+    openTxt();
+    return
   }
-  /////////////////////////////
   else if (command == "file wizard" || command == "wiz" || command == "file wiz" || command == "file" || command == "2") {
     CurrentAppState = FILEWIZ;
     CurrentKBState  = NORMAL;
     newState = true;
+    return;
   }
-  /////////////////////////////
   else if (command == "back up" || command == "export" || command == "transfer" || command == "usb transfer" || command == "usb" || command == "3") {
     // OPEN USB FILE TRANSFER
   }
-  /////////////////////////////
   else if (command == "bluetooth" || command == "bt" || command == "4") {
     // OPEN BLUETOOTH
   }
-  /////////////////////////////
   else if (command == "preferences" || command == "setting" || command == "settings" || command == "5") {
     // OPEN SETTINGS
   }
-  /////////////////////////////
-  else if (command == "i farted") {
-    oledWord("That smells");
-    delay(1000);
-  } 
-  else if (command == "poop") {
-    oledWord("Yuck");
-    delay(1000);
-  } 
-  else if (command == "hello") {
-    oledWord("Hey, you!");
-    delay(1000);
-  } 
-  else if (command == "hi") {
-    oledWord("What's up?");
-    delay(1000);
-  } 
-  else if (command == "i love you") {
-    oledWord("luv u 2 <3");
-    delay(1000);
-  } 
-  else if (command == "what can you do") {
-    oledWord("idk man");
-    delay(1000);
-  } 
-  else if (command == "alexa") {
-    oledWord("...");
-    delay(1000);
-  } 
   else {
-    oledWord("Huh?");
-    delay(1000);
+    handleSilly(command);
   }
 }
 
@@ -171,56 +110,6 @@ void processKB_HOME() {
           oledLine(currentLine, false);
         }
       }
-      /*disableTimeout = false;
-      if (OLEDPowerSave) {
-        u8g2.setPowerSave(0);
-        OLEDPowerSave = false;
-      }
-      CurrentKBState = FUNC;
-      //Make sure oled only updates at 60fps
-      if (currentMillis - KBBounceMillis >= KB_COOLDOWN) {  
-        char inchar = updateKeypress();
-        //No char recieved
-        if (inchar == 0);
-        //BKSP Recieved
-        else if (inchar == 127 || inchar == 8) {}
-        else {
-          int fileIndex = (inchar == '0') ? 10 : (inchar - '0');
-          //Edit a new file
-          switch (fileIndex) {
-            case 1: //TXT
-              CurrentAppState = TXT;
-              CurrentKBState  = NORMAL;
-              einkRefresh = FULL_REFRESH_AFTER + 1;
-              //newState = true;
-              newLineAdded = true;
-              break;
-            case 2: //FILE WIZARD
-              CurrentAppState = FILEWIZ;
-              CurrentKBState  = FUNC;
-              einkRefresh = FULL_REFRESH_AFTER + 1;
-              newState = true;
-              break;
-            case 3: //USB TRANSFER
-              CurrentAppState = USB;
-              break;
-            case 4: //BLUETOOTH TRANSFER
-              CurrentAppState = BT;
-              break;
-            case 5: //SETTINGS
-              CurrentAppState = SETTINGS;
-              break;
-          }
-        }
-
-        currentMillis = millis();
-        //Make sure oled only updates at 60fps
-        if (currentMillis - OLEDFPSMillis >= 16) {
-          OLEDFPSMillis = currentMillis;
-          oledWord(currentWord);
-        }
-        KBBounceMillis = currentMillis;
-      }*/
       break;
 
     case NOWLATER:
@@ -313,4 +202,59 @@ void einkHandler_HOME() {
       }
       break;
   }
+}
+
+String openFile(char spChar) {
+  command = removeChar(command, ' ');
+  command = removeChar(command, spChar);
+  keypad.disableInterrupts();
+  listDir(SPIFFS, "/");
+  keypad.enableInterrupts();
+
+  for (uint8_t i = 0; i < (sizeof(filesList) / sizeof(filesList[0])); i++) {
+    String lowerFileName = filesList[i]; 
+    lowerFileName.toLowerCase();
+    if (command == lowerFileName || (command+".txt") == lowerFileName || ("/"+command+".txt") == lowerFileName) {
+      return filesList[i];
+    }
+  }
+
+  return null;
+}
+
+void openTxt() {
+  CurrentAppState = TXT;
+  CurrentKBState  = NORMAL;
+  newLineAdded = true;
+}
+
+void handleSilly(String command) {
+  if (command == "home") {
+    oledWord("You're home, silly!");
+  }
+  else if (command == "i farted") {
+    oledWord("That smells");
+  } 
+  else if (command == "poop") {
+    oledWord("Yuck");
+  } 
+  else if (command == "hello") {
+    oledWord("Hey, you!");
+  } 
+  else if (command == "hi") {
+    oledWord("What's up?");
+  } 
+  else if (command == "i love you") {
+    oledWord("luv u 2 <3");
+  } 
+  else if (command == "what can you do") {
+    oledWord("idk man");
+  } 
+  else if (command == "alexa") {
+    oledWord("...");
+  } 
+  else {
+    oledWord("Huh?");
+  }
+  delay(1000);
 }
