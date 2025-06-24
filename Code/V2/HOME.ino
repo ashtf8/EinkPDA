@@ -71,6 +71,19 @@ void commandSelect(String command) {
     newState = true;
   }
   /////////////////////////////
+  else if (command == "calendar" || command == "cal" || command == "date" || command == "6") { // Added Calendar launch command
+    // Get current date for initial view
+    DateTime now = rtc.now();
+    displayedYear = now.year();
+    displayedMonth = now.month();
+    selectedDay = now.day(); // Start with current day selected
+
+    CurrentAppState = CALENDAR;
+    CurrentCalendarState = CAL_MONTH_VIEW; // Set initial state
+    CurrentKBState  = NORMAL;             // Start in normal KB state
+    newState = true;                      // Trigger eink redraw for Calendar
+  }
+  /////////////////////////////
   else if (command == "back up" || command == "export" || command == "transfer" || command == "usb transfer" || command == "usb" || command == "3") {
     // OPEN USB FILE TRANSFER
   }
