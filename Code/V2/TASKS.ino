@@ -6,17 +6,35 @@
 //      888       .8'     `888.  oo     .d8P  888  `88b.  oo     .d8P //
 //     o888o     o88o     o8888o 8""88888P'  o888o  o888o 8""88888P'  //                                                        
 
+// --- Function to ensure the tasks file exists ---
+void ensureTasksFileExists() {
+  if (!SPIFFS.exists("/tasks.txt")) {
+    Serial.println("'/tasks.txt' not found, creating empty file.");
+    File file = SPIFFS.open("/tasks.txt", FILE_WRITE);
+    if (!file) {
+      Serial.println("Failed to create '/tasks.txt'");
+    } else {
+      // Optionally write a header or leave it empty
+      // file.println("# TaskName|DueDate(YYYY-MM-DD)|Priority|Completed(Y/N)");
+      file.close();
+      Serial.println("Empty '/tasks.txt' created.");
+    }
+  }
+}
+
 void addTask(String taskName, String dueDate, String priority, String completed) {
   String taskInfo = taskName+"|"+dueDate+"|"+priority+"|"+completed;
-  updateTaskArray();
+  updateTaskArray(); // Load existing tasks first
   tasks.push_back({taskName, dueDate, priority, completed});
   updateTasksFile();
 }
 
 void updateTaskArray() {
+  ensureTasksFileExists(); // Make sure the file exists before trying to read
+
   File file = SPIFFS.open("/tasks.txt", "r"); // Open the text file in read mode
   if (!file) {
-    Serial.println("Failed to open file for reading");
+    Serial.println("Failed to open tasks file for reading"); // Corrected message
     return;
   }
 
@@ -51,6 +69,8 @@ void updateTaskArray() {
 }
 
 void updateTasksFile() {
+  ensureTasksFileExists(); // Make sure the file exists before trying to write/delete
+
   // Clear the existing tasks file first
   delFile("/tasks.txt");
 
