@@ -8,6 +8,10 @@
 #include <Wire.h>
 #include <Adafruit_TCA8418.h>
 #include <vector>
+#include <queue>
+#include <stack>
+#include <map>
+#include <set>
 #include <algorithm>
 #include <Buzzer.h>
 #include <USB.h>
@@ -117,9 +121,9 @@ extern KBState CurrentKBState;
 extern uint8_t partialCounter;
 extern volatile bool forceSlowFullUpdate;
 
-enum AppState { HOME, TXT, FILEWIZ, USB_APP, BT, SETTINGS, TASKS, CALENDAR, JOURNAL, LEXICON };
+enum AppState { HOME, TXT, FILEWIZ, USB_APP, BT, SETTINGS, TASKS, CALENDAR, JOURNAL, LEXICON, CALC };
 extern const String appStateNames[];
-extern const unsigned char *appIcons[9];
+extern const unsigned char *appIcons[10];
 extern AppState CurrentAppState;
 
 // <TXT.cpp>
@@ -186,9 +190,33 @@ extern CalendarState CurrentCalendarState;
 enum LexState {MENU, DEF};
 extern LexState CurrentLexState;
 
+// <CALC.cpp>
+enum CALCState { CALC0, CALC1, CALC2, CALC3, CALC4, CALCFONT };
+// max refreshes before a full refresh is forced (change to 5 for eink longevity)
+#define REFRESH_MAX_CALC 10
+#define SCROLL_MAX 8
+#define SCROLL_MED 4
+#define SCROLL_SML 2
+extern CALCState CurrentCALCState;
+extern int refresh_count;
+extern std::vector<String> allLinesCalc;
+extern String cleanExpression;
+extern String calculatedResult;
+extern int calcSwitchedStates;
+extern String prevLine;
+extern std::map<String, float> variables;
+extern  std::set<String> operatorsCalc;
+extern  std::set<String> functionsCalc;
+extern std::set<String> constantsCalc;
+extern std::map<String, int> precedenceCalc;
+extern std::vector<String> helpText;
+extern char bufferString[20];
+extern int trigType;
+
 // <JOURNAL.cpp>
 enum JournalState {J_MENU, J_TXT};
 extern JournalState CurrentJournalState;
+
 
 
 // FUNCTION PROTOTYPES
@@ -246,6 +274,8 @@ void setTXTFont(const GFXfont *font);
 void setFastFullRefresh(bool setting);
 void drawStatusBar(String input);
 void multiPassRefesh(int passes);
+void drawCalc(); // Calc
+void einkCalcDynamic(bool doFull_, bool noRefresh = false);  // Calc
 
 // <FILEWIZ.cpp>
 void FILEWIZ_INIT();
@@ -314,5 +344,26 @@ void einkHandler_JOURNAL();
 // <PocketMage>
 void applicationEinkHandler();
 void processKB();
+
+// <CALC.cpp>
+void CALC_INIT();
+void einkHandler_CALC();
+void processKB_CALC();
+void updateScrollFromTouch_Calc(); // new processSB_Calc?
+void closeCalc(AppState newAppState); //calc eink function
+void oledScrollCalc(); // calc oled function
+int calculate(const String& cleanedInput,String &resultOutput);
+std::deque<String> convertToRPN(String expression);
+String evaluateRPN(std::deque<String> rpnQueue);
+std::vector<String> tokenize(const String& expression);
+void calcCRInput();
+String formatNumber(double value);
+void printAnswer(String resultOutput);
+bool isNumberToken(const String& token);
+bool isVariableToken(const String& token);
+bool isFunctionToken(const String& token);
+bool isOperatorToken(const String& token);
+bool isConstantToken(const String& token);
+double convertTrig(double input, int trigType,bool reverse = false);
 
 #endif // GLOBALS_H

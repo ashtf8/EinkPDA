@@ -234,3 +234,4 @@ void oledScroll() {
   // SEND BUFFER 
   u8g2.sendBuffer();
 }
+

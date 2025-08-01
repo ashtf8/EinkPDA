@@ -33,7 +33,8 @@ extern const unsigned char _homeIcons6 [] PROGMEM;
 extern const unsigned char _homeIcons7 [] PROGMEM;
 extern const unsigned char _homeIcons8 [] PROGMEM;
 extern const unsigned char _homeIcons9 [] PROGMEM;
-extern const unsigned char* homeIconsAllArray[8];
+extern const unsigned char _homeIcons10 [] PROGMEM;
+extern const unsigned char* homeIconsAllArray[9];
 
 //
 extern const unsigned char fileWizardfileWiz0 [] PROGMEM;
@@ -141,7 +142,13 @@ extern const unsigned char _eventMarker0 [] PROGMEM;
 extern const unsigned char _eventMarker1 [] PROGMEM;
 
 //
+extern const unsigned char calcApp0 [] PROGMEM;
+extern const int calcAllArray_LEN;
+extern const unsigned char* calcAllArray[1];
+
+//
 extern const unsigned char _journal [] PROGMEM;
+
 
 
 

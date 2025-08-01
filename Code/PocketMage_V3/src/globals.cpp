@@ -93,8 +93,8 @@ volatile bool SDCARD_INSERT = false;
 bool noSD = false;
 volatile bool SDActive = false;
 
-const String appStateNames[] = { "txt", "filewiz", "usb", "bt", "settings", "tasks", "calendar", "journal", "lexicon" };
-const unsigned char *appIcons[9] = { _homeIcons2, _homeIcons3, _homeIcons4, _homeIcons5, _homeIcons6, taskIconTasks0, _homeIcons7, _homeIcons8, _homeIcons9};
+const String appStateNames[] = { "txt", "filewiz", "usb", "bt", "settings", "tasks", "calendar", "journal", "lexicon", "calc" };
+const unsigned char *appIcons[10] = { _homeIcons2, _homeIcons3, _homeIcons4, _homeIcons5, _homeIcons6, taskIconTasks0, _homeIcons7, _homeIcons8, _homeIcons9,_homeIcons10};
 
 AppState CurrentAppState;
 
@@ -154,5 +154,120 @@ CalendarState CurrentCalendarState = MONTH;
 // <LEXICON.cpp>
 LexState CurrentLexState = MENU;
 
+
+// <CALC.cpp>
+CALCState CurrentCALCState = CALC0;
+int calcSwitchedStates = 0;
+int trigType = 1;
+int refresh_count = 0;
+std::vector<String> allLinesCalc;
+String cleanExpression = "";
+String calculatedResult = "";
+String prevLine = "";
+char bufferString[20];
+std::map<String, float> variables= {};
+std::set<String> constantsCalc = {
+       "inf", "-inf", "pi", "e", "ans"
+};
+std::set<String> operatorsCalc = {
+      "+", "-", "'", "/", "%", "=", "!", "\""
+};
+std::set<String> functionsCalc = {
+      // trig
+      "sin", "cos", "tan", "asin", "acos", "atan",
+      "sinh", "cosh", "tanh", "sec", "csc", "cot", 
+      "sech", "csch", "coth", "asec", "acsc", "acot",
+      // scientific
+      "ln", "log", "sqrt", "cbrt", "abs", "exp",
+      "round", "min", "max", "pow", "rand",
+      // fun
+      "dice","pick"
+};
+std::map<String, int> precedenceCalc = {
+      {":", 0}, {"+", 1}, {"-", 1}, {"'", 2}, {"/", 2}, {"%", 2}, {"\"", 3}, {"!", 4}, {"~neg~",4}
+  };
+std::vector<String>  helpText = {
+  "\n",
+  "    vvv scroll down vvv\n",
+  "This is the help screen\n",
+  "\n",
+  "press enter to exit help\n",
+  "\n",
+  "NOTES:\n",
+  "  /6 -> EXIT APP\n",
+  "  scroll <- ->\n",
+  "\n",
+  "    vvv scroll down vvv\n",
+  "\n",
+  "\n",
+  "commands:\n",
+  "\n",
+  "    '/' + <command> \n",
+  " 0 : standard\n",
+  "  \n",
+  " 1 : programming\n",
+  "    (not implemented) \n",
+  " 2 : scientific \n",
+  "    (not implemented) \n",
+  " 3 : conversions \n",
+  "    (not implemented) \n",
+  " 4 : help\n",
+  "  \n",
+  " 5 : export to txt\n",
+  "  \n",
+  " 6 : EXIT\n",
+  "  \n",
+  " rad : radian mode\n",
+  "  \n",
+  " deg : degree mode\n",
+  "  \n",
+  " grad : gradian mode\n",
+  "  \n",
+  "keyboard changes:\n",
+  "  default kb state:FUNC\n",
+  "  tab && fn(tab) == font\n",
+  "  bksp == fn(bskp)\n",
+  "  left arrow scroll  ^ \n",
+  "  right arrow scroll v \n",
+  "operators:\n",
+  "  \n",
+  " - (unary included)\n",
+  " +\n",
+  " * (type: ' or a(b))\n",
+  " /\n",
+  " %\n",
+  " !\n",
+  " !! repeat prev line\n",
+  " ^ (type: \")\n",
+  " = (type: :)\n",
+  "\n",
+  "functions: \n",
+  "\n",
+  " sin(a) asin(a) sinh(a)\n",
+  " csc(a) acsc(a) csch(a)\n",
+  " cos(a) acos(a) cosh(a)\n",
+  " sec(a) asec(a) sech(a)\n",
+  " tan(a) atan(a) tanh(a)\n",
+  " cot(a) acot(a) coth(a)\n",
+  " sqrt(a)\n",
+  " exp(a)     log(a)\n",
+  " pow(a,b)   log10(a\n",
+  " floor(a)   ceil(a)\n",
+  " min(a)     max(a)\n",
+  " round(a)\n",
+  " abs(a)\n",
+  " rand(a,b) from min a -> b\n",
+  " dice(a,b) a: num b:sides\n",
+  " pick(a,n) a: choices\n",
+  "           n: no. choices\n",
+  "\n",
+  "variables: \n",
+  "\n",
+  "must start with alpha char \n",
+  "excluding constants \n",
+  "    ^^^ scroll up ^^^"
+};
+
 // <JOURNAL.cpp>
 JournalState CurrentJournalState = J_MENU;
+

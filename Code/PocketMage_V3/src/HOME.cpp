@@ -115,6 +115,10 @@ void commandSelect(String command) {
     JOURNAL_INIT();
   }
   /////////////////////////////
+  else if (command == "calc" || command == "calculator" || command == "math" || command == "10") {
+    CALC_INIT();
+  }
+  /////////////////////////////
   else if (command == "i farted") {
     oledWord("That smells");
     delay(1000);
